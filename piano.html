@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>HTMLピアノ</title>
+<style>
+  /* 全ての要素で幅の計算方法を統一し、レイアウト崩れを防ぎます */
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #eef1f5;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .piano {
+    display: flex;
+    position: relative;
+    border: 1px solid #b0b0b0;
+    background-color: #333;
+  }
+
+  .key {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .white {
+    width: 60px;
+    height: 280px;
+    background-color: white;
+    border: 1px solid #333;
+    position: relative; /* ラベルを配置するための基準 */
+  }
+
+  .black {
+    width: 38px;
+    height: 170px;
+    background-color: #222;
+    position: absolute;
+    z-index: 10;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+    border-radius: 0 0 5px 5px;
+    /* 黒鍵を自身の幅の半分だけ左にずらして中央に配置します */
+    transform: translateX(-50%);
+  }
+
+  /* --- 黒鍵の正しい位置 --- */
+  /* leftの値は、白鍵の境界線の位置を指定します (白鍵の幅は60px) */
+
+  /* 1オクターブ目 */
+  .black[data-note="Db4"] { left: 60px; }   /* CとDの間 */
+  .black[data-note="Eb4"] { left: 120px; }  /* DとEの間 */
+  .black[data-note="Gb4"] { left: 240px; }  /* FとGの間 */
+  .black[data-note="Ab4"] { left: 300px; }  /* GとAの間 */
+  .black[data-note="Bb4"] { left: 360px; }  /* AとBの間 */
+
+  /* 2オクターブ目 (1オクターブ目の位置 + 白鍵7つ分の幅 420px) */
+  .black[data-note="Db5"] { left: 480px; }  /* 60 + 420 */
+  .black[data-note="Eb5"] { left: 540px; }  /* 120 + 420 */
+  .black[data-note="Gb5"] { left: 660px; }  /* 240 + 420 */
+  .black[data-note="Ab5"] { left: 720px; }  /* 300 + 420 */
+  .black[data-note="Bb5"] { left: 780px; }  /* 360 + 420 */
+
+  /* 押した時のエフェクト */
+  .key:active {
+    background-color: #ddd;
+  }
+  .black:active {
+    background-color: #444;
+  }
+
+  /* 鍵盤上のラベルのスタイル */
+  .key-label {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #555;
+    pointer-events: none; 
+  }
+
+</style>
+</head>
+<body>
+
+<div class="piano">
+  <!-- 1オクターブ目 -->
+  <div class="key white" data-note="C4"><div class="key-label">C</div></div>
+  <div class="key white" data-note="D4"><div class="key-label">D</div></div>
+  <div class="key white" data-note="E4"><div class="key-label">E</div></div>
+  <div class="key white" data-note="F4"><div class="key-label">F</div></div>
+  <div class="key white" data-note="G4"><div class="key-label">G</div></div>
+  <div class="key white" data-note="A4"><div class="key-label">A</div></div>
+  <div class="key white" data-note="B4"><div class="key-label">B</div></div>
+
+  <!-- 2オクターブ目 -->
+  <div class="key white" data-note="C5"><div class="key-label">C</div></div>
+  <div class="key white" data-note="D5"><div class="key-label">D</div></div>
+  <div class="key white" data-note="E5"><div class="key-label">E</div></div>
+  <div class="key white" data-note="F5"><div class="key-label">F</div></div>
+  <div class="key white" data-note="G5"><div class="key-label">G</div></div>
+  <div class="key white" data-note="A5"><div class="key-label">A</div></div>
+  <div class="key white" data-note="B5"><div class="key-label">B</div></div>
+  
+  <!-- 黒鍵 -->
+  <div class="key black" data-note="Db4"></div>
+  <div class="key black" data-note="Eb4"></div>
+  <div class="key black" data-note="Gb4"></div>
+  <div class="key black" data-note="Ab4"></div>
+  <div class="key black" data-note="Bb4"></div>
+
+  <div class="key black" data-note="Db5"></div>
+  <div class="key black" data-note="Eb5"></div>
+  <div class="key black" data-note="Gb5"></div>
+  <div class="key black" data-note="Ab5"></div>
+  <div class="key black" data-note="Bb5"></div>
+</div>
+
+<script>
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+  // 2オクターブ分の周波数データ (C4からB5まで)
+  const noteFrequencies = {
+    'C4': 261.63, 'Db4': 277.18, 'D4': 293.66, 'Eb4': 311.13, 'E4': 329.63,
+    'F4': 349.23, 'Gb4': 369.99, 'G4': 392.00, 'Ab4': 415.30, 'A4': 440.00,
+    'Bb4': 466.16, 'B4': 493.88,
+    'C5': 523.25, 'Db5': 554.37, 'D5': 587.33, 'Eb5': 622.25, 'E5': 659.26,
+    'F5': 698.46, 'Gb5': 739.99, 'G5': 783.99, 'Ab5': 830.61, 'A5': 880.00,
+    'Bb5': 932.33, 'B5': 987.77
+  };
+
+  /**
+   * ノイズ対策済みの音を再生する関数
+   */
+  function playNote(note) {
+    const frequency = noteFrequencies[note];
+    if (!frequency) return;
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
+    const gainNode = audioContext.createGain();
+    const oscillator = audioContext.createOscillator();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    const now = audioContext.currentTime;
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.5, now + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+    oscillator.start(now);
+    oscillator.stop(now + 0.5);
+  }
+
+  // 各鍵盤にクリックイベントを割り当てる
+  document.querySelectorAll('.key').forEach(key => {
+    key.addEventListener('mousedown', () => {
+      playNote(key.dataset.note);
+    });
+  });
+</script>
+
+</body>
+</html>
